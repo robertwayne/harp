@@ -86,10 +86,9 @@ impl TryFrom<Action> for Bufferfish {
 
 impl Display for Action {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let detail = if self.detail.is_some() {
-            self.detail.as_ref().unwrap().to_string()
-        } else {
-            "None".to_string()
+        let detail = match &self.detail {
+            Some(d) => d.to_string(),
+            None => "None".to_string(),
         };
 
         write!(

@@ -1,7 +1,11 @@
+#![forbid(unsafe_code)]
+#![feature(vec_push_within_capacity)]
+
 use bufferfish::Bufferfish;
 
 use futures_lite::StreamExt;
 
+use futures_util::SinkExt;
 use harp::{action::Action, Result};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use std::{net::SocketAddr, sync::Arc, time::Duration};
@@ -41,7 +45,10 @@ async fn main() -> Result<()> {
 
     // Create a shared queue for actions; we clone it immediately as we have to
     // move it across threads for the queue processor.
-    let shared_queue = Arc::new(RwLock::new(Vec::new()));
+    //
+    // Initially, we will allocate space for 100 Actions. This will be resized
+    // as needed in the queue processor.
+    let shared_queue = Arc::new(RwLock::new(Vec::with_capacity(1)));
     let mut queue = Arc::clone(&shared_queue);
 
     tokio::task::spawn(async move {
@@ -122,7 +129,25 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
                 Some(Ok(bytes)) => {
                     let bf = Bufferfish::from(bytes);
                     let action = Action::try_from(bf)?;
-                    queue.write().await.push(action);
+                    let mut queue = queue.write().await;
+
+                    // We utilize the `push_within_capacity` and `try_reserve`
+                    // to avoid panicking if we would exceed system memory.
+                    if let Err(action) = queue.push_within_capacity(action) {
+                        tracing::debug!("Queue is full; attempting to resize");
+
+                        if let Err(e) = queue.try_reserve(100) {
+                            tracing::error!("Cannot resize queue: {}", e);
+
+                            // We'll reconstruct the Bufferfish from the failing
+                            // Action and send it back to the service where it
+                            // will be stored in a reserve queue to resend
+                            // later.
+                            let bf = Bufferfish::try_from(action)?;
+                            frame.send(bf.into()).await?;
+                        }
+                    };
+
                 }
                 Some(Err(e)) => {
                     tracing::error!("Error reading from service stream: {}", e);

@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
     //
     // Initially, we will allocate space for 100 Actions. This will be resized
     // as needed in the queue processor.
-    let shared_queue = Arc::new(RwLock::new(Vec::with_capacity(1)));
+    let shared_queue = Arc::new(RwLock::new(Vec::with_capacity(100)));
     let mut queue = Arc::clone(&shared_queue);
 
     tokio::task::spawn(async move {

@@ -82,12 +82,12 @@ impl Harp {
 
         let (tx, rx) = flume::unbounded::<Action>();
 
-        tracing::info!("Service connected to Harp on {}", addr);
+        tracing::info!("Service connected to Harp on {addr}");
 
         Ok(Self { stream, rx, tx, reserve_queue: Vec::with_capacity(10) })
     }
 
-    /// Convert a provided host and port into a SocketAddr. If no host or port
+    /// Convert a provided host and port into a `SocketAddr`. If no host or port
     /// are provided, defaults to "127.0.0.1:7777".
     fn get_socket_addr(host: Option<String>, port: Option<u16>) -> SocketAddr {
         let host = host
@@ -122,11 +122,9 @@ impl Harp {
                     self.reserve_queue.push(bf);
                 },
                 Ok(action) = self.rx.recv_async() => {
-                    tracing::debug!("Sending action: {:?}", action);
-
                     let bf: Bufferfish = action.try_into()?;
                     if let Err(e) = self.stream.send(bf.into()).await {
-                        tracing::error!("Failed to send action: {}", e);
+                        tracing::error!("Failed to send action: {e}");
                     }
                 }
                 _ = interval.tick() => {
@@ -140,7 +138,7 @@ impl Harp {
                         // case the server is still suffering from backpressure.
                         for bf in self.reserve_queue.drain(..RETRY_RESERVE_BATCH_SIZE) {
                             if let Err(e) = self.stream.send(bf.into()).await {
-                                tracing::error!("Failed to send action: {}", e);
+                                tracing::error!("Failed to send action: {e}");
                             }
                         }
                     }

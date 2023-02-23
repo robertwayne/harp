@@ -1,7 +1,8 @@
+use std::fmt::Display;
+
 use bufferfish::Bufferfish;
 use serde_json::Value;
 use sqlx::types::ipnetwork::IpNetwork;
-use std::fmt::Display;
 
 use crate::{error::HarpError, Loggable};
 

@@ -1,14 +1,13 @@
 #![forbid(unsafe_code)]
 #![feature(vec_push_within_capacity)]
 
+use std::{net::SocketAddr, sync::Arc, time::Duration};
+
 use bufferfish::Bufferfish;
-
 use futures_lite::StreamExt;
-
 use futures_util::SinkExt;
 use harp::{action::Action, Result};
 use sqlx::{PgPool, Postgres, QueryBuilder};
-use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::RwLock,
@@ -59,7 +58,7 @@ async fn main() -> Result<()> {
             tokio::select! {
                 _ = interval.tick() => {
                     if let Err(e) = process_queue(&mut queue, Arc::clone(&pg)).await {
-                        tracing::error!("Error processing queue: {}", e);
+                        tracing::error!("Error processing queue: {e}");
                     }
                 }
             };
@@ -71,12 +70,12 @@ async fn main() -> Result<()> {
     loop {
         tokio::select! {
             Ok((stream, addr)) = listener.accept() => {
-                tracing::info!("Service connected: {}", addr);
+                tracing::info!("Service connected: {addr}");
 
                 let queue = Arc::clone(&shared_queue);
                 tokio::spawn(async move {
                     if let Err(e) = handle_connection(addr, stream, queue).await {
-                        tracing::error!("Error handling connection: {}", e);
+                        tracing::error!("Error handling connection: {e}");
                     }
                 })
             }
@@ -137,7 +136,7 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
                         tracing::debug!("Queue is full; attempting to resize");
 
                         if let Err(e) = queue.try_reserve(100) {
-                            tracing::error!("Cannot resize queue: {}", e);
+                            tracing::error!("Cannot resize queue: {e}");
 
                             // We'll reconstruct the Bufferfish from the failing
                             // Action and send it back to the service where it
@@ -150,11 +149,11 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
 
                 }
                 Some(Err(e)) => {
-                    tracing::error!("Error reading from service stream: {}", e);
+                    tracing::error!("Error reading from service stream: {e}");
                     break;
                 }
                 None => {
-                    tracing::info!("Service disconnected: {}", addr);
+                    tracing::info!("Service disconnected: {addr}");
                     break;
                 }
             }

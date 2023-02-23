@@ -1,3 +1,9 @@
+use std::{
+    fmt::{Display, Formatter},
+    net::{IpAddr, Ipv4Addr},
+    time::Duration,
+};
+
 /// In order to replicate this example on your own, you will need to include
 /// both `tokio`, `harp`, and `serde_json` in your `Cargo.toml`.
 ///
@@ -17,11 +23,6 @@
 /// the near future.
 use harp::{action::Action, Harp, HarpId, Loggable};
 use serde_json::json;
-use std::{
-    fmt::{Display, Formatter},
-    net::{IpAddr, Ipv4Addr},
-    time::Duration,
-};
 
 // We'll define our action kind as an enum for type safety. A kind can be
 // represented by any string type, however.

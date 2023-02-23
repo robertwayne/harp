@@ -68,6 +68,9 @@ impl Harp {
 
     async fn connect_with_address(addr: SocketAddr) -> Result<Self> {
         let mut interval = interval(Duration::from_millis(1000));
+        // TODO: This could result in massive bursts of actions if the server is
+        // disconnected for a long time. This should be configurable, but also
+        // probably have a different default.
         interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
         let options = ReconnectOptions::new().with_retries_generator(backoff_generator);

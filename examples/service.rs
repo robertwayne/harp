@@ -83,6 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = harp.run().await;
     });
 
+    // We'll tick every second, just to simulate some actions quickly.
     let mut interval = tokio::time::interval(Duration::from_secs(1));
 
     loop {

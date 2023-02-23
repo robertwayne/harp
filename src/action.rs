@@ -44,17 +44,20 @@ impl Action {
             created: time::OffsetDateTime::now_utc(),
         }
     }
+}
 
-    /// Panic-free alternative to the `From<Bufferfish> for Action` impl.
-    pub fn try_from_bufferfish(mut bf: Bufferfish) -> Result<Self, HarpError> {
-        let id = bf.read_u32()?;
-        let addr = bf
+impl TryFrom<Bufferfish> for Action {
+    type Error = HarpError;
+
+    fn try_from(mut value: Bufferfish) -> Result<Self, Self::Error> {
+        let id = value.read_u32()?;
+        let addr = value
             .read_string()?
             .parse::<IpNetwork>()
             .map_err(|_| HarpError::BadIdentifier("Invalid IP Address".to_string()))?;
-        let kind = bf.read_string()?;
+        let kind = value.read_string()?;
 
-        let detail = bf.read_string()?;
+        let detail = value.read_string()?;
         let detail = if detail.is_empty() { None } else { Some(serde_json::from_str(&detail)?) };
 
         let created = time::OffsetDateTime::now_utc();
@@ -63,44 +66,21 @@ impl Action {
     }
 }
 
-impl From<Bufferfish> for Action {
-    fn from(mut bf: Bufferfish) -> Self {
-        let id = bf.read_u32().unwrap();
-        let addr = bf.read_string().unwrap().parse::<IpNetwork>().unwrap();
-        let kind = bf.read_string().unwrap();
-        let detail = bf.read_string().unwrap();
-        let created = time::OffsetDateTime::now_utc();
+impl TryFrom<Action> for Bufferfish {
+    type Error = HarpError;
 
-        Self {
-            id,
-            addr,
-            kind,
-            detail: if detail.is_empty() {
-                None
-            } else {
-                Some(serde_json::from_str(&detail).unwrap())
-            },
-            created,
-        }
-    }
-}
-
-// TODO: Possibly remove this impl and just make try_from_bufferfish the only
-// way to create an Action from a Bufferfish. This being able to panic is not
-// ideal for a service/server that must be resilient.
-impl From<Action> for Bufferfish {
-    fn from(action: Action) -> Self {
+    fn try_from(value: Action) -> Result<Self, Self::Error> {
         let mut bf = Bufferfish::new();
-        bf.write_u32(action.id).unwrap();
-        bf.write_string(&action.addr.to_string()).unwrap();
-        bf.write_string(&action.kind).unwrap();
-        if action.detail.is_some() {
-            bf.write_string(&serde_json::to_string(&action.detail.unwrap()).unwrap()).unwrap();
+        bf.write_u32(value.id)?;
+        bf.write_string(&value.addr.to_string())?;
+        bf.write_string(&value.kind)?;
+        if let Some(detail) = value.detail {
+            bf.write_string(&serde_json::to_string(&detail)?)?;
         } else {
-            bf.write_string("").unwrap();
+            bf.write_string("")?;
         }
 
-        bf
+        Ok(bf)
     }
 }
 

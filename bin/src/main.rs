@@ -121,7 +121,7 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
             result = frame.next() => match result {
                 Some(Ok(bytes)) => {
                     let bf = Bufferfish::from(bytes);
-                    let action = Action::from(bf);
+                    let action = Action::try_from(bf)?;
                     queue.write().await.push(action);
                 }
                 Some(Err(e)) => {

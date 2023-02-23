@@ -100,7 +100,7 @@ impl Harp {
             while let Ok(action) = self.rx.try_recv() {
                 tracing::debug!("Sending action: {:?}", action);
 
-                let bf: Bufferfish = action.into();
+                let bf: Bufferfish = action.try_into()?;
                 if let Err(e) = self.stream.send(bf.into()).await {
                     tracing::error!("Failed to send action: {}", e);
                 }

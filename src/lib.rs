@@ -71,10 +71,10 @@ impl Harp {
 
         let options = ReconnectOptions::new().with_retries_generator(backoff_generator);
 
-        // TODO: Expand retries to include fresh connections.
-        //Currently, if a service fails to connect to the server (eg. it is down
-        // / connectionrefused error), it just closes out. Ideally, we attempt
-        // to reconnect to the server.
+        // TODO: Expand retries to include fresh connections. Currently, if a
+        //service fails to connect to the server (received a ConnectionRefused
+        // error), it just closes out. Ideally, we attempt to reconnect to the
+        // server.
         let stream = StubbornTcpStream::connect_with_options(addr, options).await?;
         stream.set_nodelay(true)?;
 
@@ -101,7 +101,7 @@ impl Harp {
 
     /// Returns a reference to the write half of the channel. Users can pass
     /// `Action`s into this channel, and they will be processed by Harp.
-    pub fn get_send_channel(&self) -> flume::Sender<Action> {
+    pub fn get_sender(&self) -> flume::Sender<Action> {
         self.tx.clone()
     }
 

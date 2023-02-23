@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get the send half for the Harp service. You can call this freely and get
     // as many write halves as you'd like; under the hood they are just cheap
     // clones.
-    let tx = harp.get_send_channel();
+    let tx = harp.get_sender();
 
     // We'll create a fake player. In a real application, you'd assign the IP
     // from the underlying stream. Additionally, you'd want unique IDs.

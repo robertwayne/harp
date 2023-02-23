@@ -14,6 +14,7 @@ use crate::{error::HarpError, Loggable};
 pub struct Action {
     pub id: u32,
     pub addr: IpNetwork,
+    // TODO: Make kind generic T: Kind where Kind is a trait with key() -> &str
     pub kind: String,
     pub detail: Option<Value>,
     pub created: time::OffsetDateTime,

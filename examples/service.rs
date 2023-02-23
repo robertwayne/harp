@@ -62,6 +62,8 @@ impl Loggable for Player {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt::init();
+
     // Create and connect to a Harp server using the default hostname and port.
     // This is "127.0.0.1:7777".
     let mut harp = Harp::connect().await?;

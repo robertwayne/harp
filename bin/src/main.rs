@@ -18,7 +18,7 @@ use tokio_util::codec::LengthDelimitedCodec;
 type SharedQueue = Arc<RwLock<Vec<Action>>>;
 
 const POSTGRES_BIND_LIMIT: usize = 65535;
-const PROCESS_QUEUE_INTERVAL_SECS: u64 = 1;
+const PROCESS_QUEUE_INTERVAL_SECS: u64 = 10;
 
 #[tokio::main]
 async fn main() -> Result<()> {

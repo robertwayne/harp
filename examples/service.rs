@@ -1,3 +1,9 @@
+use std::{
+    fmt::{Display, Formatter},
+    net::{IpAddr, Ipv4Addr},
+    time::Duration,
+};
+
 /// In order to replicate this example on your own, you will need to include
 /// both `tokio`, `harp`, and `serde_json` in your `Cargo.toml`.
 ///
@@ -17,11 +23,6 @@
 /// the near future.
 use harp::{action::Action, Harp, HarpId, Loggable};
 use serde_json::json;
-use std::{
-    fmt::{Display, Formatter},
-    net::{IpAddr, Ipv4Addr},
-    time::Duration,
-};
 
 // We'll define our action kind as an enum for type safety. A kind can be
 // represented by any string type, however.
@@ -62,6 +63,8 @@ impl Loggable for Player {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt::init();
+
     // Create and connect to a Harp server using the default hostname and port.
     // This is "127.0.0.1:7777".
     let mut harp = Harp::connect().await?;
@@ -69,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get the send half for the Harp service. You can call this freely and get
     // as many write halves as you'd like; under the hood they are just cheap
     // clones.
-    let tx = harp.get_send_channel();
+    let tx = harp.get_sender();
 
     // We'll create a fake player. In a real application, you'd assign the IP
     // from the underlying stream. Additionally, you'd want unique IDs.
@@ -80,6 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = harp.run().await;
     });
 
+    // We'll tick every second, just to simulate some actions quickly.
     let mut interval = tokio::time::interval(Duration::from_secs(1));
 
     loop {

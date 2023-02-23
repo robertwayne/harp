@@ -1,6 +1,6 @@
 # Harp
 
-Harp is a database logging library and daemon.
+Harp is a database logging library and service daemon.
 
 The library allows for any Rust application to become a Harp service, running an
 "action" processor off-thread which communicates with a designated `harpd`
@@ -11,17 +11,6 @@ The `harpd` service provides a resilient, message-style queue for logging
 
 Harp operates on "actions", which are basically just highly structured messages
 with unique IDs and IP addresses.
-
-## Motivation
-
-Harp was designed for use with online games, and thus has a few specific
-requirements. Specifically, items to be logged _(known as targets)_ must
-implement the `Loggable` trait, which requires that the item has an IP address
-and a unique ID.
-
-The original use-case was for saving player actions to a database; as I maintain
-a few game servers, I wanted it to be easy to integrate this kind of logging
-across them all without having to write a bunch of boilerplate code.
 
 ## Usage
 
@@ -46,7 +35,7 @@ is highly opinionated.
 
 ### "What about `tracing` or other Rust logging libraries?"
 
-Harp is meant for logging what I call "Actions", which require a structured
+Harp is meant for logging what I call "actions", which require a structured
 format, along with an identifier. This is not meant for logging general
 messages, errors, or other things which are not tied to a specific item under
 these constraints.

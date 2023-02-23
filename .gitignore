@@ -1,0 +1,22 @@
+# Directories
+netconfig
+results
+out
+target
+node_modules
+
+# Files
+swarm_names.txt
+yarn-error.log
+package-lock.json
+Cargo.lock
+yarn.lock
+
+# Config Files
+.env
+.cargo/config
+.cargo/config.toml
+
+# User Settings
+.vscode
+.idea

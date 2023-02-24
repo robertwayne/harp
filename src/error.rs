@@ -1,5 +1,6 @@
 use sqlx::migrate::MigrateError;
 
+// TODO: Rewrite error handling completely.
 #[derive(Debug)]
 pub enum HarpError {
     ConnectionFailed,
@@ -7,7 +8,8 @@ pub enum HarpError {
     BadIdentifier(String),
     Internal(std::io::Error),
     Database(sqlx::Error),
-    Parse(serde_json::Error),
+    Json(serde_json::Error),
+    Time(time::error::Parse),
 }
 
 impl std::error::Error for HarpError {}
@@ -28,7 +30,8 @@ impl std::fmt::Display for HarpError {
             }
             HarpError::Internal(e) => write!(f, "[Internal] {e}"),
             HarpError::Database(e) => write!(f, "[Database] {e}"),
-            HarpError::Parse(e) => write!(f, "[Parse] {e}"),
+            HarpError::Json(e) => write!(f, "[JSON] {e}"),
+            HarpError::Time(e) => write!(f, "[Time] {e}"),
         }
     }
 }
@@ -47,6 +50,12 @@ impl From<sqlx::Error> for HarpError {
 
 impl From<serde_json::Error> for HarpError {
     fn from(err: serde_json::Error) -> Self {
-        HarpError::Parse(err)
+        HarpError::Json(err)
+    }
+}
+
+impl From<time::error::Parse> for HarpError {
+    fn from(err: time::error::Parse) -> Self {
+        HarpError::Time(err)
     }
 }

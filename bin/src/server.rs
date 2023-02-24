@@ -20,7 +20,7 @@ const POSTGRES_BIND_LIMIT: usize = 65535;
 const LIMIT: usize = POSTGRES_BIND_LIMIT / 5;
 
 pub(crate) async fn listen(config: Config, pg: PgPool) -> Result<()> {
-    let addr = SocketAddr::new(config.host.parse()?, config.port);
+    let addr = config.get_addr();
 
     // Attempt to connect to the harpd server
     let listener = TcpListener::bind(addr).await?;

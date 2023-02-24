@@ -6,16 +6,17 @@ use serde::Deserialize;
 /// A struct representing the configuration for the harpd daemon.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Config {
-    pub host: String,
-    pub port: u16,
+    host: String,
+    port: u16,
+    database: DatabaseConfig,
+
     // Duration in seconds between processing the queue.
     #[serde(rename = "process_interval")]
     pub process_interval_secs: u64,
-    database: DatabaseConfig,
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct DatabaseConfig {
+struct DatabaseConfig {
     name: String,
     user: String,
     pass: String,
@@ -66,5 +67,10 @@ impl Config {
             self.database.port,
             self.database.name
         )
+    }
+
+    /// Returns a `SocketAddr` for the Harp server.
+    pub(crate) fn get_addr(&self) -> Result<SocketAddr> {
+        SocketAddr::new(self.host.parse()?, self.port)
     }
 }

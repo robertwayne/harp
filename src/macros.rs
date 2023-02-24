@@ -10,7 +10,7 @@
 /// ```
 /// # #[macro_use] extern crate harp;
 /// #
-/// # use harp::{Harp, action::Action, Loggable, HarpId};
+/// # use harp::{Harp, action::{Action, Kind}, Loggable, HarpId};
 /// # use std::net::{IpAddr, Ipv4Addr};
 /// #
 /// # pub struct MyAction {}
@@ -18,6 +18,18 @@
 /// # impl Loggable for MyAction {
 /// #    fn identifier(&self) -> HarpId {
 /// #      (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+/// # }
+/// #
+/// # pub enum MyKind {
+/// #   A
+/// # }
+/// #
+/// # impl Kind for MyKind {
+/// #   fn key(&self) -> &'static str {
+/// #     match self {
+/// #       MyKind::A => "a"
+/// #     }
+/// #   }
 /// # }
 /// #
 /// # #[tokio::main]
@@ -28,7 +40,7 @@
 /// // We can then create an action...
 /// // See the `action::Action` documentation for more information on
 /// // constructing actions and implementing the Loggable trait.
-/// let action = Action::new("my_kind", &MyAction{});
+/// let action = Action::new(MyKind::A, &MyAction{});
 ///
 /// // ...and send it to the Harp server.
 /// harp.send(action)?;
@@ -71,7 +83,7 @@ macro_rules! create_service {
         tx
     }};
     ($host:expr, $port:expr) => {{
-        let mut harp = Harp::connect_with_addr($host, $port).await?;
+        let mut harp = Harp::connect_with_options($host, $port).await?;
         let tx = harp.get_sender();
 
         tokio::spawn(async move {

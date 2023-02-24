@@ -62,8 +62,8 @@ impl Harp {
 
     /// Attempts to connect to the designated Harp server. If the connection
     /// fails, an exponential backoff will be used to retry the connection.
-    pub async fn connect_with_options(hostname: IpAddr, port: u16) -> Result<Self> {
-        let addr = Harp::create_addr(Some(hostname.to_string()), Some(port));
+    pub async fn connect_with_options(hostname: &str, port: u16) -> Result<Self> {
+        let addr = Harp::create_addr(Some(hostname), Some(port));
         Self::connect_with_address(addr).await
     }
 
@@ -94,11 +94,9 @@ impl Harp {
 
     /// Convert a provided host and port into a `SocketAddr`. If no host or port
     /// are provided, defaults to "127.0.0.1:7777".
-    fn create_addr(host: Option<String>, port: Option<u16>) -> SocketAddr {
-        let host = host
-            .unwrap_or_else(|| "127.0.0.1".to_string())
-            .parse::<IpAddr>()
-            .unwrap_or_else(|_| [127, 0, 0, 1].into());
+    fn create_addr(host: Option<&str>, port: Option<u16>) -> SocketAddr {
+        let host =
+            host.unwrap_or("127.0.0.1").parse::<IpAddr>().unwrap_or_else(|_| [127, 0, 0, 1].into());
         let port = port.unwrap_or(7777);
 
         SocketAddr::new(host, port)

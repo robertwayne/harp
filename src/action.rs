@@ -7,6 +7,16 @@ use time::{macros::format_description, OffsetDateTime};
 
 use crate::{error::HarpError, Loggable};
 
+/// Represents a "kind" of action. Implementing this trait requires the `key()`
+/// method, which should return a string representation of the action kind. This
+/// string should be unique and, ideally, small.
+///
+/// The return value will be stored in the database, so consider that when
+/// deciding on a key.
+pub trait Kind {
+    fn key(&self) -> &str;
+}
+
 /// Represents a "complete" action to be logged into the database at a later
 /// time. Actions are primarily defined by their kind, which is a string
 /// representation of the action that occurred. They can include optional
@@ -15,7 +25,6 @@ use crate::{error::HarpError, Loggable};
 pub struct Action {
     pub id: u32,
     pub addr: IpNetwork,
-    // TODO: Make kind generic T: Kind where Kind is a trait with key() -> &str
     pub kind: String,
     pub detail: Option<Value>,
     pub created: time::OffsetDateTime,
@@ -23,26 +32,26 @@ pub struct Action {
 
 impl Action {
     /// Create a basic action that has no extraneous details.
-    pub fn new(kind: impl Display, target: &impl Loggable) -> Self {
+    pub fn new(kind: impl Kind, target: &impl Loggable) -> Self {
         let (ip, id) = target.identifier();
 
         Self {
             id,
             addr: IpNetwork::from(ip),
-            kind: kind.to_string(),
+            kind: kind.key().to_string(),
             detail: None,
             created: time::OffsetDateTime::now_utc(),
         }
     }
 
     /// Create an action with a detail string.
-    pub fn with_detail(kind: impl Display, detail: Value, target: &impl Loggable) -> Self {
+    pub fn with_detail(kind: impl Kind, detail: Value, target: &impl Loggable) -> Self {
         let (ip, id) = target.identifier();
 
         Self {
             id,
             addr: IpNetwork::from(ip),
-            kind: kind.to_string(),
+            kind: kind.key().to_string(),
             detail: Some(detail),
             created: time::OffsetDateTime::now_utc(),
         }

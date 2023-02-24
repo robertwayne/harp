@@ -64,24 +64,14 @@ impl Loggable for Player {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
-
-    // Create and connect to a Harp server using the default hostname and port.
-    // This is "127.0.0.1:7777".
-    let mut harp = Harp::connect().await?;
-
-    // Get the send half for the Harp service. You can call this freely and get
-    // as many write halves as you'd like; under the hood they are just cheap
-    // clones.
-    let tx = harp.get_sender();
-
     // We'll create a fake player. In a real application, you'd assign the IP
     // from the underlying stream. Additionally, you'd want unique IDs.
     let player = Player { id: 1, ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)) };
 
-    tokio::spawn(async move {
-        // We move the service off to its own task.
-        let _ = harp.run().await;
-    });
+    // Create and connect to a Harp server using the default hostname and port
+    // of "127.0.0.1:7777".
+    // IMPORTANT: Notice that this is a macro, not a function.
+    let harp = harp::create_service!();
 
     // We'll tick every second, just to simulate some actions quickly.
     let mut interval = tokio::time::interval(Duration::from_secs(1));
@@ -101,8 +91,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Remember, the service is on another task, which means it
                 // could be on another thread, so using this send half to pass
                 // the action is required.
-                let _ = tx.send(action);
-                let _ = tx.send(action2);
+                harp.send(action)?;
+                harp.send(action2)?;
             }
         }
     }

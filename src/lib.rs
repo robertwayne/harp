@@ -3,6 +3,7 @@
 
 pub mod action;
 pub mod error;
+pub mod macros;
 
 use std::{
     net::{IpAddr, SocketAddr},

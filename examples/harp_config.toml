@@ -1,0 +1,11 @@
+host = "127.0.0.1"
+port = 7777
+# Duration in seconds between processing the queue.
+process_interval = 10
+
+[database]
+name = "harp"
+user = "harp"
+pass = "harp"
+host = "127.0.0.1"
+port = 5432

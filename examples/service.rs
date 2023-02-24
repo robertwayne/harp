@@ -1,9 +1,3 @@
-use std::{
-    fmt::{Display, Formatter},
-    net::{IpAddr, Ipv4Addr},
-    time::Duration,
-};
-
 /// In order to replicate this example on your own, you will need to include
 /// both `tokio`, `harp`, and `serde_json` in your `Cargo.toml`.
 ///
@@ -21,7 +15,15 @@ use std::{
 ///
 /// This is a WIP example, and this process will be simplified and automated in
 /// the near future.
-use harp::{action::Action, Harp, HarpId, Loggable};
+use std::{
+    net::{IpAddr, Ipv4Addr},
+    time::Duration,
+};
+
+use harp::{
+    action::{Action, Kind},
+    Harp, HarpId, Loggable,
+};
 use serde_json::json;
 
 // We'll define our action kind as an enum for type safety. A kind can be
@@ -31,13 +33,15 @@ pub enum ActionKind {
     PlayerLeave,
 }
 
-// We will implement `std::fmt::Display` so our `ActionKind` can be turned into
-// the string types that a `harp::Action` expects.
-impl Display for ActionKind {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+// We also need to implement the `Kind` trait for our enum. This requires that
+// we implement the `key()` method, which will return a string representation of
+// the action. This string will be stored in the database, so think about how
+// you'd like to have your action kinds represented.
+impl Kind for ActionKind {
+    fn key(&self) -> &'static str {
         match self {
-            ActionKind::PlayerJoin => write!(f, "player_join"),
-            ActionKind::PlayerLeave => write!(f, "player_leave"),
+            ActionKind::PlayerJoin => "player_join",
+            ActionKind::PlayerLeave => "player_leave",
         }
     }
 }
@@ -65,23 +69,15 @@ impl Loggable for Player {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    // Create and connect to a Harp server using the default hostname and port.
-    // This is "127.0.0.1:7777".
-    let mut harp = Harp::connect().await?;
-
-    // Get the send half for the Harp service. You can call this freely and get
-    // as many write halves as you'd like; under the hood they are just cheap
-    // clones.
-    let tx = harp.get_sender();
-
     // We'll create a fake player. In a real application, you'd assign the IP
     // from the underlying stream. Additionally, you'd want unique IDs.
     let player = Player { id: 1, ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)) };
 
-    tokio::spawn(async move {
-        // We move the service off to its own task.
-        let _ = harp.run().await;
-    });
+    // Create and connect to a Harp server using the default hostname and port
+    // of "127.0.0.1:7777". The returned value from `create_service!()` macro is
+    // the send half of an MPMC channel. This can be cloned cheaply. We'll use
+    // this to send actions to the service as it lives in its own task thread.
+    let harp = harp::create_service!();
 
     // We'll tick every second, just to simulate some actions quickly.
     let mut interval = tokio::time::interval(Duration::from_secs(1));
@@ -101,8 +97,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Remember, the service is on another task, which means it
                 // could be on another thread, so using this send half to pass
                 // the action is required.
-                let _ = tx.send(action);
-                let _ = tx.send(action2);
+                harp.send(action)?;
+                harp.send(action2)?;
             }
         }
     }

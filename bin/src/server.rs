@@ -19,7 +19,7 @@ type SharedQueue = Arc<RwLock<Vec<Action>>>;
 const POSTGRES_BIND_LIMIT: usize = 65535;
 const LIMIT: usize = POSTGRES_BIND_LIMIT / 5;
 
-pub async fn listen(config: Config, pg: PgPool) -> Result<()> {
+pub(crate) async fn listen(config: Config, pg: PgPool) -> Result<()> {
     let addr = SocketAddr::new(config.host.parse()?, config.port);
 
     // Attempt to connect to the harpd server

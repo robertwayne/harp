@@ -64,13 +64,15 @@ impl Loggable for Player {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
+
     // We'll create a fake player. In a real application, you'd assign the IP
     // from the underlying stream. Additionally, you'd want unique IDs.
     let player = Player { id: 1, ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)) };
 
     // Create and connect to a Harp server using the default hostname and port
-    // of "127.0.0.1:7777".
-    // IMPORTANT: Notice that this is a macro, not a function.
+    // of "127.0.0.1:7777". The returned value from `create_service!()` macro is
+    // the send half of an MPMC channel. This can be cloned cheaply. We'll use
+    // this to send actions to the service as it lives in its own task thread.
     let harp = harp::create_service!();
 
     // We'll tick every second, just to simulate some actions quickly.

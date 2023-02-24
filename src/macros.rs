@@ -28,7 +28,7 @@
 /// // We can then create an action...
 /// // See the `action::Action` documentation for more information on
 /// // constructing actions and implementing the Loggable trait.
-/// let action = Action::new("my_channel", &MyAction{});
+/// let action = Action::new("my_kind", &MyAction{});
 ///
 /// // ...and send it to the Harp server.
 /// harp.send(action)?;

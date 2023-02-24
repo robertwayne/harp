@@ -11,6 +11,11 @@ path = "src/lib.rs"
 [[bin]]
 name = "harpd"
 path = "bin/src/main.rs"
+required-features = ["bin"]
+
+[features]
+default = []
+bin = ["serde", "pico-args", "toml"]
 
 [dependencies]
 bufferfish = { path = "../bufferfish/bufferfish-rs", version = "0.1.0", features = [
@@ -21,9 +26,6 @@ futures-lite = { version = "1", default-features = false, features = ["std"] }
 futures-util = { version = "0.3", default-features = false, features = [
     "sink",
 ] }
-tokio = { version = "1", default-features = false, features = ["macros"] }
-tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
-time = { version = "0.3", features = ["parsing"] }
 serde_json = "1"
 stubborn-io = "0.3"
 sqlx = { version = "0.6", features = [
@@ -33,6 +35,9 @@ sqlx = { version = "0.6", features = [
     "ipnetwork",
     "migrate",
 ] }
+time = { version = "0.3", features = ["parsing"] }
+tokio = { version = "1", default-features = false, features = ["macros"] }
+tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
 tracing = { version = "0.1", default-features = false }
 tracing-appender = { version = "0.2", default-features = false, optional = true }
 tracing-subscriber = { version = "0.3", default-features = false, features = [
@@ -41,6 +46,10 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
     "ansi",
 ] }
 
+# Binary Dependencies
+serde = { version = "1", features = ["derive"], optional = true }
+pico-args = { version = "0.5", optional = true }
+toml = { version = "0.7", optional = true }
 
 [profile.release]
 opt-level = 3

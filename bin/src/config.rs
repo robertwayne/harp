@@ -11,16 +11,16 @@ pub(crate) struct Config {
     // Duration in seconds between processing the queue.
     #[serde(rename = "process_interval")]
     pub process_interval_secs: u64,
-    pub database: DatabaseConfig,
+    database: DatabaseConfig,
 }
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct DatabaseConfig {
-    pub name: String,
-    pub user: String,
-    pub pass: String,
-    pub host: String,
-    pub port: i16,
+    name: String,
+    user: String,
+    pass: String,
+    host: String,
+    port: i16,
 }
 
 impl Config {
@@ -54,5 +54,17 @@ impl Config {
         let config: Config = toml::from_str(&config_file)?;
 
         Ok(config)
+    }
+
+    /// Returns a full connection string for the database.
+    pub(crate) fn get_database_url() -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.database.user,
+            self.database.pass,
+            self.database.host,
+            self.database.port,
+            self.database.name
+        )
     }
 }

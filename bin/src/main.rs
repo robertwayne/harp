@@ -82,17 +82,7 @@ async fn main() -> Result<()> {
 
     let pg = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
-        .connect(
-            format!(
-                "postgres://{}:{}@{}:{}/{}",
-                config.database.user,
-                config.database.pass,
-                config.database.host,
-                config.database.port,
-                config.database.name
-            )
-            .as_str(),
-        )
+        .connect(&config.get_database_url())
         .await?;
 
     // TODO: The migration files need to be embed in the binary at build time.

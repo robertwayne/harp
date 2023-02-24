@@ -32,6 +32,46 @@ struct Args {
     config_path: Option<String>,
 }
 
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::SubscriberBuilder::default()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
+        .init();
+
+    // TODO: Replace with const fn when stabilized.
+    let help = HELP.replace("{VERSION}", VERSION);
+
+    let args = match parse_args(&help) {
+        Ok(args) => args,
+        Err(_) => {
+            println!("{help}");
+            exit(1);
+        }
+    };
+
+    let config = Config::load_from_file(args.config_path)?;
+
+    // TODO: Pool size should be configurable.
+    let pg = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.get_database_url())
+        .await?;
+
+    // TODO: The migration files need to be embed in the binary at build time.
+    sqlx::migrate!().run(&pg).await?;
+
+    if let Err(e) = server::listen(config, pg).await {
+        tracing::error!("Error listening: {e}");
+        exit(1);
+    }
+
+    Ok(())
+}
+
 fn parse_args(help: &str) -> Result<Args> {
     let mut pargs = Arguments::from_env();
 
@@ -54,44 +94,4 @@ fn parse_args(help: &str) -> Result<Args> {
     }
 
     Ok(args)
-}
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    tracing_subscriber::fmt::SubscriberBuilder::default()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy(),
-        )
-        .init();
-
-    // Unfortunately, I don't see a way to format a string literal in a const
-    // context currently.
-    let help = HELP.replace("{VERSION}", VERSION);
-
-    let args = match parse_args(&help) {
-        Ok(args) => args,
-        Err(_) => {
-            println!("{help}");
-            exit(1);
-        }
-    };
-
-    let config = Config::load_from_file(args.config_path)?;
-
-    let pg = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&config.get_database_url())
-        .await?;
-
-    // TODO: The migration files need to be embed in the binary at build time.
-    sqlx::migrate!().run(&pg).await?;
-
-    if let Err(e) = server::listen(config, pg).await {
-        tracing::error!("Error listening: {e}");
-        exit(1);
-    }
-
-    Ok(())
 }

@@ -1,8 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use bufferfish::Bufferfish;
-use futures_lite::StreamExt;
-use futures_util::SinkExt;
+use futures_util::{SinkExt, StreamExt};
 use harp::{action::Action, Result};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use tokio::{

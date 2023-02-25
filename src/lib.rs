@@ -13,8 +13,7 @@ use std::{
 use action::Action;
 use bufferfish::Bufferfish;
 use error::HarpError;
-use futures_lite::StreamExt;
-use futures_util::SinkExt;
+use futures_util::{SinkExt, StreamExt};
 use stubborn_io::{tokio::StubbornIo, ReconnectOptions, StubbornTcpStream};
 use tokio::{
     net::TcpStream,

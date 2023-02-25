@@ -2,7 +2,6 @@
 #![forbid(unsafe_code)]
 
 pub mod action;
-pub mod error;
 pub mod macros;
 
 use std::{
@@ -12,7 +11,6 @@ use std::{
 
 use action::Action;
 use bufferfish::Bufferfish;
-use error::HarpError;
 use futures_util::{SinkExt, StreamExt};
 use stubborn_io::{tokio::StubbornIo, ReconnectOptions, StubbornTcpStream};
 use tokio::{
@@ -21,7 +19,7 @@ use tokio::{
 };
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
-pub type Result<T> = std::result::Result<T, HarpError>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub type HarpId = (IpAddr, u32);
 
 /// The maximum amount of times this service will attempt to reconnect to the
@@ -60,6 +58,8 @@ pub trait Loggable {
     /// Returns an (IP, ID) pair which uniquely identifies this struct.
     fn identifier(&self) -> HarpId;
 }
+
+pub struct HarpError {}
 
 pub struct Harp {
     stream: Framed<StubbornIo<TcpStream, SocketAddr>, LengthDelimitedCodec>,

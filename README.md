@@ -53,6 +53,13 @@ there are no plans to support other options.
 
 Not yet.
 
+__Notes__:
+
+- If you're working on anything in `/bin`, you'll need to enable the `bin`
+  feature for cargo to check and build it.
+  - If you're using `rust-analyzer`,  add the following to a local settings
+file: `"rust-analyzer.cargo.features": "all"`.
+
 ## License
 
 Harp source code is dual-licensed under either

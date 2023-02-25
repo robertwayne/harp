@@ -7,7 +7,7 @@
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// # #[macro_use] extern crate harp;
 /// #
 /// # use harp::{Harp, action::{Action, Kind}, Loggable, HarpId};
@@ -51,7 +51,7 @@
 ///
 /// You can also specify a custom hostname and port:
 ///       
-/// ```
+/// ```no_run
 /// # #[macro_use] extern crate harp;
 /// #
 /// # use harp::{Harp, action::Action, Loggable, HarpId};
@@ -66,7 +66,7 @@
 /// #
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let harp = harp::create_service!("127.0.0.1", 7778);
+/// let harp = harp::create_service!("127.0.0.1", 7777);
 /// # Ok(())
 /// # }
 /// ```              

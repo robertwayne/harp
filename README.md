@@ -65,7 +65,7 @@ file: `"rust-analyzer.cargo.features": "all"`.
 
 Harp source code is dual-licensed under either
 
-- **[MIT License](/docs/LICENSE-MIT)**
-- **[Apache License, Version 2.0](/docs/LICENSE-APACHE)**
+- __[MIT License](/docs/LICENSE-MIT)__
+- __[Apache License, Version 2.0](/docs/LICENSE-APACHE)__
 
 at your option.

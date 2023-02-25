@@ -33,8 +33,8 @@ pub(crate) async fn listen(config: Config, pg: PgPool) -> Result<()> {
     let shared_queue = Arc::new(RwLock::new(Vec::with_capacity(100)));
     let mut queue = Arc::clone(&shared_queue);
 
+    let mut interval = interval(Duration::from_secs(config.get_process_interval_secs()));
     tokio::task::spawn(async move {
-        let mut interval = interval(Duration::from_secs(config.process_interval_secs));
         let pg = Arc::new(pg);
 
         loop {

@@ -1,5 +1,6 @@
 use std::{
     net::{IpAddr, SocketAddr},
+    num::{NonZeroU32, NonZeroU64},
     path::Path,
 };
 
@@ -14,8 +15,8 @@ pub(crate) struct Config {
     database: DatabaseConfig,
 
     // Duration in seconds between processing the queue.
-    #[serde(rename = "process_interval", default = "default_process_interval_secs")]
-    pub process_interval_secs: u64,
+    #[serde(rename = "process_interval")]
+    pub process_interval_secs: NonZeroU64,
 
     // Maximum size (in bytes) to accept for a single packet.
     #[serde(default = "default_max_packet_size")]
@@ -31,8 +32,7 @@ struct DatabaseConfig {
     port: i16,
 
     // Maximum number of connections to assign to the database connection pool.
-    #[serde(default = "default_connections")]
-    max_connections: u32,
+    max_connections: NonZeroU32,
 }
 
 impl Config {
@@ -88,18 +88,15 @@ impl Config {
     /// Returns the maximum connections to be assigned to
     /// the database connection pool.
     pub(crate) fn get_max_connections(&self) -> u32 {
-        self.database.max_connections
+        self.database.max_connections.into()
+    }
+
+    /// Returns the interval in seconds between processing the queue.
+    pub(crate) fn get_process_interval_secs(&self) -> u64 {
+        self.process_interval_secs.into()
     }
 }
 
 fn default_max_packet_size() -> usize {
     1024
-}
-
-fn default_process_interval_secs() -> u64 {
-    1
-}
-
-fn default_connections() -> u32 {
-    3
 }

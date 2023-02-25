@@ -43,6 +43,33 @@ port = 5432
 max_connections = 3
 ```
 
+## Architecture
+
+`harpd` is designed to be simple and resilient; in an ideal scenario, once you
+start it, you can _(mostly)_ forget about it.
+
+The flow of the service looks like this:
+
+1. `harpd` starts up and connects to the database.
+2. Two asyncronous tasks are created: a queue processor and a connection
+   handler.
+   - The connection handler will attempt to decode incoming messages as Harp `Action`s.
+   - Successfully decoded messages are added to the queue.
+   - The processing task will _(eventually)_ batch-process the actions in a
+     single database transaction.
+
+Some notes:
+
+- The service can safely handle invalid packets (size, decoding, etc.) without
+  crashing. Connections are dropped by default on failure.
+- Messages will be returned to the sender if the queue is full and/or the system
+  is OOM and cannot allocate more memory. The Harp library store these messages
+  on a reserve queue and slowly retry them later.
+  - If you are interacting with `harpd` without going through the Harp library,
+    you must manually handle this case!
+- Queries are executed again if the database connection is lost once it has been
+  re- established.
+
 ## FAQ
 
 ### "What about \<insert other logging tool\>?"

@@ -59,6 +59,7 @@ __Notes__:
   feature for cargo to check and build it.
   - If you're using `rust-analyzer`,  add the following to a local settings
 file: `"rust-analyzer.cargo.features": "all"`.
+- `/bin` requires the use of nightly due to the use of unstable features.
 
 ## License
 

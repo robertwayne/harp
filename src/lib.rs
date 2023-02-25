@@ -90,6 +90,7 @@ impl Harp {
         // probably have a different default.
         interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
+        // TODO: Should accept custom backoff generators.
         let options = ReconnectOptions::new().with_retries_generator(backoff_generator);
 
         // TODO: Expand retries to include fresh connections. Currently, if a
@@ -167,7 +168,7 @@ impl Harp {
     }
 }
 
-pub fn backoff_generator() -> impl Iterator<Item = std::time::Duration> {
+fn backoff_generator() -> impl Iterator<Item = std::time::Duration> {
     let mut v = Vec::with_capacity(15);
     for i in 0..RETRY_CONNECT_LIMIT {
         v.push(std::time::Duration::from_secs(u64::from(RETRY_CONNECT_INTERVAL_SECS * i)));

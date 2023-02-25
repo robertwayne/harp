@@ -22,6 +22,7 @@ use tokio::{
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
 pub type Result<T> = std::result::Result<T, HarpError>;
+pub type HarpId = (IpAddr, u32);
 
 /// The maximum amount of times this service will attempt to reconnect to the
 /// Harp server.
@@ -38,11 +39,27 @@ const RETRY_RESERVE_BATCH_SIZE: usize = 10;
 /// Structs which implement the `Loggable` trait are able to be identified by a
 /// pair of IP and ID - generally a specific player / account or an unidentified
 /// connection.
+///
+/// # Examples
+///
+/// ```
+/// # use harp::Loggable;
+/// # use std::net::IpAddr;
+/// struct Player {
+///     ip: IpAddr,
+///     id: u32,
+/// }
+///
+/// impl Loggable for Player {
+///     fn identifier(&self) -> (IpAddr, u32) {
+///         (self.ip, self.id)
+///     }
+/// }
+/// ```
 pub trait Loggable {
+    /// Returns an (IP, ID) pair which uniquely identifies this struct.
     fn identifier(&self) -> HarpId;
 }
-
-pub type HarpId = (IpAddr, u32);
 
 pub struct Harp {
     stream: Framed<StubbornIo<TcpStream, SocketAddr>, LengthDelimitedCodec>,

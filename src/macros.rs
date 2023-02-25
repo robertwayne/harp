@@ -7,7 +7,7 @@
 ///
 /// # Examples
 ///
-/// ```
+/// ```no_run
 /// # #[macro_use] extern crate harp;
 /// #
 /// # use harp::{Harp, action::{Action, Kind}, Loggable, HarpId};
@@ -16,20 +16,20 @@
 /// # pub struct MyAction {}
 /// #
 /// # impl Loggable for MyAction {
-/// #    fn identifier(&self) -> HarpId {
-/// #      (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+/// #     fn identifier(&self) -> HarpId {
+/// #         (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
 /// # }
 /// #
 /// # pub enum MyKind {
-/// #   A
+/// #     A
 /// # }
 /// #
 /// # impl Kind for MyKind {
-/// #   fn key(&self) -> &'static str {
-/// #     match self {
-/// #       MyKind::A => "a"
+/// #     fn key(&self) -> &'static str {
+/// #         match self {
+/// #           MyKind::A => "a"
+/// #         }
 /// #     }
-/// #   }
 /// # }
 /// #
 /// # #[tokio::main]
@@ -45,13 +45,13 @@
 /// // ...and send it to the Harp server.
 /// harp.send(action)?;
 /// #
-/// # Ok(())
+/// #     Ok(())
 /// # }
 /// ```
 ///
 /// You can also specify a custom hostname and port:
 ///       
-/// ```
+/// ```no_run
 /// # #[macro_use] extern crate harp;
 /// #
 /// # use harp::{Harp, action::Action, Loggable, HarpId};
@@ -60,13 +60,13 @@
 /// # pub struct MyAction {}
 /// #
 /// # impl Loggable for MyAction {
-/// #    fn identifier(&self) -> HarpId {
-/// #      (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+/// #     fn identifier(&self) -> HarpId {
+/// #         (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
 /// # }
 /// #
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// let harp = harp::create_service!("127.0.0.1", 7778);
+/// let harp = harp::create_service!("127.0.0.1", 7777);
 /// # Ok(())
 /// # }
 /// ```              

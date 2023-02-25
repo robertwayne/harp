@@ -2,7 +2,6 @@
 #![forbid(unsafe_code)]
 
 pub mod action;
-pub mod error;
 pub mod macros;
 
 use std::{
@@ -12,9 +11,7 @@ use std::{
 
 use action::Action;
 use bufferfish::Bufferfish;
-use error::HarpError;
-use futures_lite::StreamExt;
-use futures_util::SinkExt;
+use futures_util::{SinkExt, StreamExt};
 use stubborn_io::{tokio::StubbornIo, ReconnectOptions, StubbornTcpStream};
 use tokio::{
     net::TcpStream,
@@ -22,7 +19,8 @@ use tokio::{
 };
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
-pub type Result<T> = std::result::Result<T, HarpError>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type HarpId = (IpAddr, u32);
 
 /// The maximum amount of times this service will attempt to reconnect to the
 /// Harp server.
@@ -39,11 +37,29 @@ const RETRY_RESERVE_BATCH_SIZE: usize = 10;
 /// Structs which implement the `Loggable` trait are able to be identified by a
 /// pair of IP and ID - generally a specific player / account or an unidentified
 /// connection.
+///
+/// # Examples
+///
+/// ```
+/// # use harp::Loggable;
+/// # use std::net::IpAddr;
+/// struct Player {
+///     ip: IpAddr,
+///     id: u32,
+/// }
+///
+/// impl Loggable for Player {
+///     fn identifier(&self) -> (IpAddr, u32) {
+///         (self.ip, self.id)
+///     }
+/// }
+/// ```
 pub trait Loggable {
+    /// Returns an (IP, ID) pair which uniquely identifies this struct.
     fn identifier(&self) -> HarpId;
 }
 
-pub type HarpId = (IpAddr, u32);
+pub struct HarpError {}
 
 pub struct Harp {
     stream: Framed<StubbornIo<TcpStream, SocketAddr>, LengthDelimitedCodec>,
@@ -74,6 +90,7 @@ impl Harp {
         // probably have a different default.
         interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
 
+        // TODO: Should accept custom backoff generators.
         let options = ReconnectOptions::new().with_retries_generator(backoff_generator);
 
         // TODO: Expand retries to include fresh connections. Currently, if a
@@ -151,11 +168,31 @@ impl Harp {
     }
 }
 
-pub fn backoff_generator() -> impl Iterator<Item = std::time::Duration> {
+fn backoff_generator() -> impl Iterator<Item = std::time::Duration> {
     let mut v = Vec::with_capacity(15);
     for i in 0..RETRY_CONNECT_LIMIT {
         v.push(std::time::Duration::from_secs(u64::from(RETRY_CONNECT_INTERVAL_SECS * i)));
     }
 
     v.into_iter()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn always_return_valid_addr() {
+        // Invalid host, default port
+        let addr = super::Harp::create_addr(Some("hello, world!"), None);
+        assert_eq!(addr, SocketAddr::new([127, 0, 0, 1].into(), 7777));
+
+        // Default host and port
+        let addr = super::Harp::create_addr(None, None);
+        assert_eq!(addr, SocketAddr::new([127, 0, 0, 1].into(), 7777));
+
+        // Valid, custom host and port
+        let addr = super::Harp::create_addr(Some("255.255.255.255"), Some(7000));
+        assert_eq!(addr, SocketAddr::new([255, 255, 255, 255].into(), 7000));
+    }
 }

@@ -1,8 +1,7 @@
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use bufferfish::Bufferfish;
-use futures_lite::StreamExt;
-use futures_util::SinkExt;
+use futures_util::{SinkExt, StreamExt};
 use harp::{action::Action, Result};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use tokio::{
@@ -19,8 +18,8 @@ type SharedQueue = Arc<RwLock<Vec<Action>>>;
 const POSTGRES_BIND_LIMIT: usize = 65535;
 const LIMIT: usize = POSTGRES_BIND_LIMIT / 5;
 
-pub async fn listen(config: Config, pg: PgPool) -> Result<()> {
-    let addr = SocketAddr::new(config.host.parse()?, config.port);
+pub(crate) async fn listen(config: Config, pg: PgPool) -> Result<()> {
+    let addr = config.get_addr();
 
     // Attempt to connect to the harpd server
     let listener = TcpListener::bind(addr).await?;
@@ -34,8 +33,8 @@ pub async fn listen(config: Config, pg: PgPool) -> Result<()> {
     let shared_queue = Arc::new(RwLock::new(Vec::with_capacity(100)));
     let mut queue = Arc::clone(&shared_queue);
 
+    let mut interval = interval(Duration::from_secs(config.get_process_interval_secs()));
     tokio::task::spawn(async move {
-        let mut interval = interval(Duration::from_secs(config.process_interval_secs));
         let pg = Arc::new(pg);
 
         loop {
@@ -58,7 +57,7 @@ pub async fn listen(config: Config, pg: PgPool) -> Result<()> {
 
                 let queue = Arc::clone(&shared_queue);
                 tokio::spawn(async move {
-                    if let Err(e) = handle_connection(addr, stream, queue).await {
+                    if let Err(e) = handle_connection(addr, stream, queue, config.max_packet_size).await {
                         tracing::error!("Error handling connection: {e}");
                     }
                 })
@@ -102,15 +101,40 @@ async fn process_queue(queue: &mut SharedQueue, pg: Arc<PgPool>) -> Result<()> {
 /// Handles a single connection from an external service. Responsible for
 /// parsing incoming messages, converting them into `Action`s, and adding them
 /// to the shared queue.
-async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQueue) -> Result<()> {
+async fn handle_connection(
+    addr: SocketAddr,
+    stream: TcpStream,
+    queue: SharedQueue,
+    max_packet_size: usize,
+) -> Result<()> {
     let mut frame = LengthDelimitedCodec::builder().length_field_type::<u16>().new_framed(stream);
+
+    // If the max_packet_size is smaller than the minimum packet size, we'll
+    // just use the minimum packet size.
+    let max_packet_size = if max_packet_size < 128 { 128 } else { max_packet_size };
 
     loop {
         tokio::select! {
             result = frame.next() => match result {
                 Some(Ok(bytes)) => {
+                    // Drop connections that send packets larger than the
+                    // assigned limit in order to prevent DoS attacks.
+                    let length = bytes.len();
+                    if length > max_packet_size {
+                        tracing::warn!("Packet size exceeds limit: {length} bytes from {addr}");
+                        break;
+                    }
+
                     let bf = Bufferfish::from(bytes);
-                    let action = Action::try_from(bf)?;
+
+                    let action = match Action::try_from(bf) {
+                        Ok(action) => action,
+                        Err(e) => {
+                            tracing::error!("{e}");
+                            continue;
+                        }
+                    };
+
                     let mut queue = queue.write().await;
 
                     // We utilize the `push_within_capacity` and `try_reserve`
@@ -133,7 +157,7 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
                 }
                 Some(Err(e)) => {
                     tracing::error!("Error reading from service stream: {e}");
-                    break;
+                    continue;
                 }
                 None => {
                     tracing::info!("Service disconnected: {addr}");

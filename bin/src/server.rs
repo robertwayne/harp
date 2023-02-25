@@ -109,7 +109,15 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
             result = frame.next() => match result {
                 Some(Ok(bytes)) => {
                     let bf = Bufferfish::from(bytes);
-                    let action = Action::try_from(bf)?;
+
+                    let action = match Action::try_from(bf) {
+                        Ok(action) => action,
+                        Err(e) => {
+                            tracing::error!("{e}");
+                            continue;
+                        }
+                    };
+
                     let mut queue = queue.write().await;
 
                     // We utilize the `push_within_capacity` and `try_reserve`
@@ -132,7 +140,7 @@ async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQue
                 }
                 Some(Err(e)) => {
                     tracing::error!("Error reading from service stream: {e}");
-                    break;
+                    continue;
                 }
                 None => {
                     tracing::info!("Service disconnected: {addr}");

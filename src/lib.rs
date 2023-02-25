@@ -176,3 +176,23 @@ fn backoff_generator() -> impl Iterator<Item = std::time::Duration> {
 
     v.into_iter()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn always_return_valid_addr() {
+        // Invalid host, default port
+        let addr = super::Harp::create_addr(Some("hello, world!"), None);
+        assert_eq!(addr, SocketAddr::new([127, 0, 0, 1].into(), 7777));
+
+        // Default host and port
+        let addr = super::Harp::create_addr(None, None);
+        assert_eq!(addr, SocketAddr::new([127, 0, 0, 1].into(), 7777));
+
+        // Valid, custom host and port
+        let addr = super::Harp::create_addr(Some("255.255.255.255"), Some(7000));
+        assert_eq!(addr, SocketAddr::new([255, 255, 255, 255].into(), 7000));
+    }
+}

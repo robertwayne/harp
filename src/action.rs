@@ -154,3 +154,43 @@ impl From<std::io::Error> for ActionError {
         Self::BufferRead(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn invalid_bufferfish_to_action() {
+        let mut bf = Bufferfish::new();
+        bf.write_u32(1).unwrap();
+        bf.write_string("127.0.256.1").unwrap(); // Invalid IP
+        bf.write_string("my_kind").unwrap();
+        bf.write_string("").unwrap();
+        bf.write_string("2023-02-24 13:01:12.558038011 +00:00:00").unwrap();
+
+        assert!(Action::try_from(bf).is_err());
+
+        let mut bf = Bufferfish::new();
+        bf.write_u16(1).unwrap(); // Send a u16 instead of a u32
+        bf.write_string("127.0.0.1").unwrap();
+        bf.write_string("my_kind").unwrap();
+        bf.write_string("").unwrap();
+        bf.write_string("2023-02-24 13:01:12.558038011 +00:00:00").unwrap();
+        assert!(Action::try_from(bf).is_err());
+
+        let bf = Bufferfish::new(); // Send an empty buffer
+        assert!(Action::try_from(bf).is_err());
+    }
+
+    #[test]
+    fn valid_bufferfish_to_action() {
+        let mut bf = Bufferfish::new();
+        bf.write_u32(1).unwrap();
+        bf.write_string("127.0.0.1").unwrap();
+        bf.write_string("my_kind").unwrap();
+        bf.write_string("").unwrap();
+        bf.write_string("2023-02-24 13:01:12.558038011 +00:00:00").unwrap();
+
+        assert!(Action::try_from(bf).is_ok());
+    }
+}

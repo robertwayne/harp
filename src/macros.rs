@@ -16,20 +16,20 @@
 /// # pub struct MyAction {}
 /// #
 /// # impl Loggable for MyAction {
-/// #    fn identifier(&self) -> HarpId {
-/// #      (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+/// #     fn identifier(&self) -> HarpId {
+/// #         (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
 /// # }
 /// #
 /// # pub enum MyKind {
-/// #   A
+/// #     A
 /// # }
 /// #
 /// # impl Kind for MyKind {
-/// #   fn key(&self) -> &'static str {
-/// #     match self {
-/// #       MyKind::A => "a"
+/// #     fn key(&self) -> &'static str {
+/// #         match self {
+/// #           MyKind::A => "a"
+/// #         }
 /// #     }
-/// #   }
 /// # }
 /// #
 /// # #[tokio::main]
@@ -45,7 +45,7 @@
 /// // ...and send it to the Harp server.
 /// harp.send(action)?;
 /// #
-/// # Ok(())
+/// #     Ok(())
 /// # }
 /// ```
 ///
@@ -60,8 +60,8 @@
 /// # pub struct MyAction {}
 /// #
 /// # impl Loggable for MyAction {
-/// #    fn identifier(&self) -> HarpId {
-/// #      (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+/// #     fn identifier(&self) -> HarpId {
+/// #         (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
 /// # }
 /// #
 /// # #[tokio::main]

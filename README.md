@@ -60,12 +60,12 @@ The flow of the service looks like this:
 
 Some notes:
 
-- The service can safely handle invalid packets (size, decoding, etc.) without
+- The service can safely handle invalid messages _(size, decoding, etc.)_ without
   crashing. Connections are dropped by default on failure.
 - Messages will be returned to the sender if the queue is full and/or the system
-  is OOM and cannot allocate more memory. The Harp library store these messages
-  on a reserve queue and slowly retry them later.
-  - If you are interacting with `harpd` without going through the Harp library,
+  cannot allocate more memory. The library stores these messages on a reserve
+  queue and will slowly retry sending them.
+  - If you are interacting with `harpd` without going through the library,
     you must manually handle this case!
 - Queries are executed again if the database connection is lost once it has been
   re- established.

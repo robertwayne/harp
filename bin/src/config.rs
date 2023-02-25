@@ -1,4 +1,7 @@
-use std::path::Path;
+use std::{
+    net::{IpAddr, SocketAddr},
+    path::Path,
+};
 
 use harp::Result;
 use serde::Deserialize;
@@ -6,7 +9,7 @@ use serde::Deserialize;
 /// A struct representing the configuration for the harpd daemon.
 #[derive(Debug, Deserialize)]
 pub(crate) struct Config {
-    host: String,
+    host: IpAddr,
     port: u16,
     database: DatabaseConfig,
 
@@ -20,7 +23,7 @@ struct DatabaseConfig {
     name: String,
     user: String,
     pass: String,
-    host: String,
+    host: IpAddr,
     port: i16,
 }
 
@@ -58,7 +61,7 @@ impl Config {
     }
 
     /// Returns a full connection string for the database.
-    pub(crate) fn get_database_url() -> String {
+    pub(crate) fn get_database_url(&self) -> String {
         format!(
             "postgres://{}:{}@{}:{}/{}",
             self.database.user,
@@ -70,7 +73,7 @@ impl Config {
     }
 
     /// Returns a `SocketAddr` for the Harp server.
-    pub(crate) fn get_addr(&self) -> Result<SocketAddr> {
-        SocketAddr::new(self.host.parse()?, self.port)
+    pub(crate) fn get_addr(&self) -> SocketAddr {
+        SocketAddr::new(self.host, self.port)
     }
 }

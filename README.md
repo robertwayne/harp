@@ -18,7 +18,30 @@ Not yet.
 
 ## Configuration
 
-Not yet.
+```toml
+# harp.toml
+host = "127.0.0.1"
+port = 7777
+
+# Duration in seconds between processing the queue.
+# This value cannot be lower than 1.
+process_interval = 10
+
+# Maximum packet size (in bytes) to accept per message.
+# This value cannot be lower than 128.
+max_packet_size = 1024
+
+[database]
+name = "harp"
+user = "harp"
+pass = "harp"
+host = "127.0.0.1"
+port = 5432
+
+# Maximum number of connections to the database.
+# This value cannot be lower than 1.
+max_connections = 3
+```
 
 ## FAQ
 

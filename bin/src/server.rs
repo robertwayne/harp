@@ -57,7 +57,7 @@ pub(crate) async fn listen(config: Config, pg: PgPool) -> Result<()> {
 
                 let queue = Arc::clone(&shared_queue);
                 tokio::spawn(async move {
-                    if let Err(e) = handle_connection(addr, stream, queue).await {
+                    if let Err(e) = handle_connection(addr, stream, queue, config.max_packet_size).await {
                         tracing::error!("Error handling connection: {e}");
                     }
                 })
@@ -101,13 +101,30 @@ async fn process_queue(queue: &mut SharedQueue, pg: Arc<PgPool>) -> Result<()> {
 /// Handles a single connection from an external service. Responsible for
 /// parsing incoming messages, converting them into `Action`s, and adding them
 /// to the shared queue.
-async fn handle_connection(addr: SocketAddr, stream: TcpStream, queue: SharedQueue) -> Result<()> {
+async fn handle_connection(
+    addr: SocketAddr,
+    stream: TcpStream,
+    queue: SharedQueue,
+    max_packet_size: usize,
+) -> Result<()> {
     let mut frame = LengthDelimitedCodec::builder().length_field_type::<u16>().new_framed(stream);
+
+    // If the max_packet_size is smaller than the minimum packet size, we'll
+    // just use the minimum packet size.
+    let max_packet_size = if max_packet_size < 128 { 128 } else { max_packet_size };
 
     loop {
         tokio::select! {
             result = frame.next() => match result {
                 Some(Ok(bytes)) => {
+                    // Drop connections that send packets larger than the
+                    // assigned limit in order to prevent DoS attacks.
+                    let length = bytes.len();
+                    if length > max_packet_size {
+                        tracing::warn!("Packet size exceeds limit: {length} bytes from {addr}");
+                        break;
+                    }
+
                     let bf = Bufferfish::from(bytes);
 
                     let action = match Action::try_from(bf) {

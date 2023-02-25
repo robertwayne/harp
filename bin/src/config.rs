@@ -14,8 +14,12 @@ pub(crate) struct Config {
     database: DatabaseConfig,
 
     // Duration in seconds between processing the queue.
-    #[serde(rename = "process_interval")]
+    #[serde(rename = "process_interval", default = "default_process_interval_secs")]
     pub process_interval_secs: u64,
+
+    // Maximum size (in bytes) to accept for a single packet.
+    #[serde(default = "default_max_packet_size")]
+    pub max_packet_size: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,6 +29,10 @@ struct DatabaseConfig {
     pass: String,
     host: IpAddr,
     port: i16,
+
+    // Maximum number of connections to assign to the database connection pool.
+    #[serde(default = "default_connections")]
+    max_connections: u32,
 }
 
 impl Config {
@@ -76,4 +84,22 @@ impl Config {
     pub(crate) fn get_addr(&self) -> SocketAddr {
         SocketAddr::new(self.host, self.port)
     }
+
+    /// Returns the maximum connections to be assigned to
+    /// the database connection pool.
+    pub(crate) fn get_max_connections(&self) -> u32 {
+        self.database.max_connections
+    }
+}
+
+fn default_max_packet_size() -> usize {
+    1024
+}
+
+fn default_process_interval_secs() -> u64 {
+    1
+}
+
+fn default_connections() -> u32 {
+    3
 }

@@ -55,9 +55,8 @@ async fn main() -> Result<()> {
 
     let config = Config::load_from_file(args.config_path)?;
 
-    // TODO: Pool size should be configurable.
     let pg = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(config.get_max_connections())
         .connect(&config.get_database_url())
         .await?;
 

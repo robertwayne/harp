@@ -68,24 +68,28 @@ pub(crate) async fn listen(config: Config, pg: PgPool) -> Result<()> {
 
 /// Iterates over the shared queue, building a batch query of actions to be
 /// executed in a single transaction on the database.
-async fn process_queue(queue: &mut SharedQueue, pg: Arc<PgPool>) -> Result<()> {
-    let mut queue = queue.write().await;
+async fn process_queue(shared_queue: &mut SharedQueue, pg: Arc<PgPool>) -> Result<()> {
+    let mut queue = shared_queue.write().await;
 
     // If the queue is empty, we don't need to do anything.
     if queue.is_empty() {
         return Ok(());
     }
 
+    // TODO: Possibly rewrite this to use PostgreSQL UNNEST() instead of a query
+    // builder. It looks like that would take a lot more memory versus this
+    // option, as the benefit of much higher performance. See:
+    // https://github.com/launchbadge/sqlx/blob/main/FAQ.md#how-can-i-bind-an-array-to-a-values-clause-how-can-i-do-bulk-inserts
     let mut query_builder: sqlx::QueryBuilder<Postgres> = QueryBuilder::new(
         "INSERT INTO harp.actions (unique_id, ip_address, kind, detail, created)",
     );
 
     // It's unlikely, but we need to make sure we never have more than the
     // postgres bind limit / struct fields in a single query.
-    let queue = if queue.len() > LIMIT { queue.drain(..LIMIT) } else { queue.drain(..) };
+    let drain = if queue.len() > LIMIT { queue.drain(..LIMIT) } else { queue.drain(..) };
 
-    tracing::debug!("Logging {} actions", queue.len());
-    query_builder.push_values(queue, |mut b, action| {
+    tracing::debug!("Logging {} actions", drain.len());
+    query_builder.push_values(drain, |mut b, action| {
         b.push_bind(i64::from(action.id))
             .push_bind(action.addr)
             .push_bind(action.kind)

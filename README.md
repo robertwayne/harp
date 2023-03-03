@@ -1,6 +1,6 @@
 # Harp
 
-Harp is a database logging library and service daemon.
+Harp is a database logging library and daemon.
 
 The library allows for any Rust application to become a Harp service, running an
 "action" processor off-thread which communicates with a designated `harpd`

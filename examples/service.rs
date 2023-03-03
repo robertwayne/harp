@@ -3,7 +3,7 @@
 ///
 /// ```toml
 /// [dependencies]
-/// tokio = { version = "1.0", features = ["full"] }
+/// tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 /// harp = { git = "https://github.com/robertwayne/harp" }
 /// ```
 ///
@@ -74,10 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let player = Player { id: 1, ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)) };
 
     // Create and connect to a Harp server using the default hostname and port
-    // of "127.0.0.1:7777". The returned value from `create_service!()` macro is
-    // the send half of an MPMC channel. This can be cloned cheaply. We'll use
-    // this to send actions to the service as it lives in its own task thread.
-    let harp = harp::create_service!();
+    // of "127.0.0.1:7777". The returned value from `create_service()` is the
+    // send half of an MPMC channel. This can be cloned cheaply. We'll use this
+    // to send actions to the service as it lives in its own task thread.
+    let harp = Harp::create_service().await?;
 
     // We'll tick every second, just to simulate some actions quickly.
     let mut interval = tokio::time::interval(Duration::from_secs(1));

@@ -2,7 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod action;
-pub mod macros;
+pub mod sender;
 
 use std::{
     net::{IpAddr, SocketAddr},
@@ -12,6 +12,7 @@ use std::{
 use action::Action;
 use bufferfish::Bufferfish;
 use futures_util::{SinkExt, StreamExt};
+use sender::Sender;
 use stubborn_io::{tokio::StubbornIo, ReconnectOptions, StubbornTcpStream};
 use tokio::{
     net::TcpStream,
@@ -69,21 +70,131 @@ pub struct Harp {
 }
 
 impl Harp {
+    /// This is a helper function to simplify the initial setup of a Harp
+    /// service. It will attempt to connect to the Harp server and, if
+    /// successful, will spawn a new task via Tokio to run the service.
+    ///
+    /// The returned `flume::Sender` is cheaply cloneable, so you can pass it
+    /// among threads and tasks.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use harp::{Harp, action::{Action, Kind}, Loggable, HarpId};
+    /// # use std::net::{IpAddr, Ipv4Addr};
+    /// #
+    /// # pub struct MyAction {}
+    /// #
+    /// # impl Loggable for MyAction {
+    /// #     fn identifier(&self) -> HarpId {
+    /// #         (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+    /// # }
+    /// #
+    /// # pub enum MyKind {
+    /// #     A
+    /// # }
+    /// #
+    /// # impl Kind for MyKind {
+    /// #     fn key(&self) -> &'static str {
+    /// #         match self {
+    /// #           MyKind::A => "a"
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// // The return value here is `flume::Sender<harp::action::Action>`
+    /// let harp = Harp::create_service().await?;
+    ///
+    /// // We can then create an action...
+    /// // See the `action::Action` documentation for more information on
+    /// // constructing actions and implementing the Loggable trait.
+    /// let action = Action::new(MyKind::A, &MyAction{});
+    ///
+    /// // ...and send it to the Harp server.
+    /// harp.send(action)?;
+    /// #
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// See `create_service_with_options` for more information on specifying a
+    /// custom hostname and port.
+    #[inline(always)]
+    pub async fn create_service() -> Result<Sender> {
+        let mut harp = Harp::connect().await?;
+        let tx = harp.get_sender();
+
+        tokio::spawn(async move {
+            let _ = harp.run().await;
+        });
+
+        Ok(Sender(tx))
+    }
+
+    /// This is a helper function to simplify the initial setup of a Harp
+    /// service. Takes a custom hostname and port to connect to the Harp server.
+    ///
+    /// See `create_service` for more information.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use harp::{Harp, action::Action, Loggable, HarpId};
+    /// # use std::net::{IpAddr, Ipv4Addr};
+    /// #
+    /// # pub struct MyAction {}
+    /// #
+    /// # impl Loggable for MyAction {
+    /// #     fn identifier(&self) -> HarpId {
+    /// #         (IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)}
+    /// # }
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let harp = Harp::create_service_with_options("127.0.0.1", 7777).await?;
+    /// # Ok(())
+    /// # }
+    #[inline(always)]
+    pub async fn create_service_with_options(hostname: &str, port: u16) -> Result<Sender> {
+        let mut harp = Harp::connect_with_options(hostname, port).await?;
+        let tx = harp.get_sender();
+
+        tokio::spawn(async move {
+            let _ = harp.run().await;
+        });
+
+        Ok(Sender(tx))
+    }
+
     /// Attempts to connect to the default Harp server. If the connection fails,
     /// an exponential backoff will be used to retry the connection.
+    ///
+    /// You will need to manually call `run` on the returned `Harp` instance, as
+    /// well as move it into a new Tokio task.
+    ///
+    /// Prefer to use `create_service` or `create_service_with_options` instead,
+    /// which handles all of this for you.
     pub async fn connect() -> Result<Self> {
         let addr = Harp::create_addr(None, None);
-        Self::connect_with_address(addr).await
+        Self::raw_connect(addr).await
     }
 
     /// Attempts to connect to the designated Harp server. If the connection
     /// fails, an exponential backoff will be used to retry the connection.
+    ///
+    /// You will need to manually call `run` on the returned `Harp` instance, as
+    /// well as well as move it into a new Tokio task.
+    ///
+    /// Prefer to use `create_service` or `create_service_with_options` instead,
+    /// which handles all of this for you.
     pub async fn connect_with_options(hostname: &str, port: u16) -> Result<Self> {
         let addr = Harp::create_addr(Some(hostname), Some(port));
-        Self::connect_with_address(addr).await
+        Self::raw_connect(addr).await
     }
 
-    async fn connect_with_address(addr: SocketAddr) -> Result<Self> {
+    async fn raw_connect(addr: SocketAddr) -> Result<Self> {
         let mut interval = interval(Duration::from_millis(1000));
         // TODO: This could result in massive bursts of actions if the server is
         // disconnected for a long time. This should be configurable, but also

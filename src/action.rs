@@ -85,7 +85,7 @@ impl TryFrom<Bufferfish> for Action {
         let created = value.read_string()?;
 
         // 2023-02-24 13:01:12.558038011 +00:00:00
-        let format = format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond] [offset_hour]:[offset_minute]:[offset_second]");
+        let format = format_description!("[year]-[month]-[day] [hour padding:none repr:24]:[minute]:[second].[subsecond] [offset_hour]:[offset_minute]:[offset_second]");
         let created = OffsetDateTime::parse(&created, format)
             .map_err(|_| ActionError::Parse { from: created, to: "time::OffsetDateTime".into() })?;
 

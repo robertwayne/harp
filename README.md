@@ -14,12 +14,73 @@ with unique IDs and IP addresses.
 
 ## Usage
 
-Not yet.
+### Daemon
+
+Download _(or build)_ the CLI tool located in `/bin` and run it with the
+`-h` flag to see the available options.
+
+```bash
+# Runs the daemon with a custom configuration file.
+# See the "Configuration" section for more information.
+harpd --config /my/harp/config.toml
+```
+
+### Service Node
+
+See the [examples](/examples) directory for a complete, well-documented example.
+If you're just looking for the bare minimum, here's a quick start example:
+
+```rust
+use std::{
+    net::{IpAddr, Ipv4Addr},
+};
+
+use harp::{
+    action::{Action, Kind},
+    Harp, HarpId, Loggable,
+};
+
+pub struct Player {
+    pub id: u32,
+    pub ip: IpAddr,
+}
+
+impl Loggable for Player {
+    fn identifier(&self) -> HarpId {
+        (self.ip, self.id)
+    }
+}
+
+pub enum ActionKind {
+    PlayerJoin,
+}
+
+impl Kind for ActionKind {
+    fn key(&self) -> &'static str {
+        match self {
+            ActionKind::PlayerJoin => "player_join",
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let harp = Harp::create_service().await?;
+
+    let player = Player { id: 1, ip: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)) };
+    let action = Action::new(ActionKind::PlayerJoin, &player);
+
+    harp.send(action)?;
+
+    Ok(())
+}
+```
 
 ## Configuration
 
+Harp is configured via a TOML file. A path can be passed via the command-line with the `-c` or `--config` flag. If no path is provided, Harp will attempt to load the configuration from `/etc/harp/config.toml`.
+
 ```toml
-# harp.toml
 host = "127.0.0.1"
 port = 7777
 

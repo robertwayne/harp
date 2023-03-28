@@ -12,9 +12,6 @@
 ///
 /// Finally, you will need to have an instance of `harpd` running. A pre-built
 /// binary from the releases page or built from the source code can be used.
-///
-/// This is a WIP example, and this process will be simplified and automated in
-/// the near future.
 use std::{
     net::{IpAddr, Ipv4Addr},
     time::Duration,

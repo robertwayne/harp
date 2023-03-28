@@ -30,7 +30,7 @@ harpd --config /my/harp/config.toml
 See the [examples](/examples) directory for a complete, well-documented example.
 If you're just looking for the bare minimum, here's a quick start example:
 
-```rust
+```rust no_run
 use std::{
     net::{IpAddr, Ipv4Addr},
     time::Duration,

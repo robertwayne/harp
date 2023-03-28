@@ -16,8 +16,8 @@ with unique IDs and IP addresses.
 
 ### Daemon
 
-Download _(or build)_ the CLI tool located in `/bin` and run it with the
-`-h` flag to see the available options.
+Download _(or build)_ the CLI tool located in `/bin` and run it with the `-h`
+flag to see the available options.
 
 ```bash
 # Runs the daemon with a custom configuration file.
@@ -26,9 +26,6 @@ harpd --config /my/harp/config.toml
 ```
 
 ### Service Node
-
-See the [examples](/examples) directory for a complete, well-documented example.
-If you're just looking for the bare minimum, here's a quick start example:
 
 ```rust no_run
 use std::{
@@ -124,7 +121,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Configuration
 
-Harp is configured via a TOML file. A path can be passed via the command-line with the `-c` or `--config` flag. If no path is provided, Harp will attempt to load the configuration from `/etc/harp/config.toml`.
+Harp is configured via a TOML file. A path can be passed via the command-line
+with the `-c` or `--config` flag. If no path is provided, Harp will attempt to
+load the configuration from `/etc/harp/config.toml`.
 
 ```toml
 host = "127.0.0.1"
@@ -160,20 +159,21 @@ The flow of the service looks like this:
 1. `harpd` starts up and connects to the database.
 2. Two asyncronous tasks are created: a queue processor and a connection
    handler.
-   - The connection handler will attempt to decode incoming messages as Harp `Action`s.
+   - The connection handler will attempt to decode incoming messages as Harp
+     `Action`s.
    - Successfully decoded messages are added to the queue.
    - The processing task will _(eventually)_ batch-process the actions in a
      single database transaction.
 
 Some notes:
 
-- The service can safely handle invalid messages _(size, decoding, etc.)_ without
-  crashing. Connections are dropped by default on failure.
+- The service can safely handle invalid messages _(size, decoding, etc.)_
+  without crashing. Connections are dropped by default on failure.
 - Messages will be returned to the sender if the queue is full and/or the system
   cannot allocate more memory. The library stores these messages on a reserve
   queue and will slowly retry sending them.
-  - If you are interacting with `harpd` without going through the library,
-    you must manually handle this case!
+  - If you are interacting with `harpd` without going through the library, you
+    must manually handle this case!
 - Queries are executed again if the database connection is lost once it has been
   re- established.
 
@@ -208,7 +208,9 @@ there are no plans to support other options.
 
 ## Contributing
 
-Not yet.
+I'm open to any and all contributions, so long as they are within the scope of
+the project! Please open an issue if you are making a large change, or if you
+have any questions.
 
 __Notes__:
 

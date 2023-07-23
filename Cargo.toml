@@ -31,7 +31,7 @@ futures-util = { version = "0.3", default-features = false, features = [
 ] }
 serde_json = { version = "1" }
 stubborn-io = { version = "0.3" }
-sqlx = { version = "0.6", features = [
+sqlx = { version = "0.7", features = [
     "runtime-tokio-rustls",
     "postgres",
     "time",

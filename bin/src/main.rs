@@ -3,6 +3,7 @@
 
 pub mod config;
 pub mod server;
+pub mod sql;
 
 use std::process::exit;
 
@@ -10,7 +11,7 @@ use harp::Result;
 use pico_args::Arguments;
 use tracing::metadata::LevelFilter;
 
-use crate::config::Config;
+use crate::{config::Config, sql::CREATE_HARP_TABLE};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const HELP: &str = "\
@@ -60,8 +61,7 @@ async fn main() -> Result<()> {
         .connect(&config.get_database_url())
         .await?;
 
-    // TODO: The migration files need to be embed in the binary at build time.
-    sqlx::migrate!().run(&pg).await?;
+    sqlx::query(CREATE_HARP_TABLE).execute(&pg).await?;
 
     if let Err(e) = server::listen(config, pg).await {
         tracing::error!("Error listening: {e}");

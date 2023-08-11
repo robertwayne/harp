@@ -1,3 +1,4 @@
+pub const CREATE_HARP_TABLE: &str = "
 CREATE TABLE IF NOT EXISTS harp.actions (
     id             serial primary key,
     unique_id      bigint                       not null,
@@ -5,4 +6,4 @@ CREATE TABLE IF NOT EXISTS harp.actions (
     kind           varchar(255)                 not null,
     detail         jsonb,
     created        timestamptz default now()    not null
-);
+)";
